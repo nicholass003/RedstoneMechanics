@@ -7,7 +7,7 @@
 <h3 align="center">RedstoneMechanics</h4>
 
 <p align="center">
-💬 A PocketMine-MP plugins which is a chat bridge between Minecraft BE and Discord without Bot.
+⚙️ RedstoneMechanics plugin that implements the Redstone circuits for PocketMine-MP.
 
 [![State](https://poggit.pmmp.io/shield.state/RedstoneMechanics)](https://poggit.pmmp.io/p/RedstoneMechanics) [![API](https://poggit.pmmp.io/shield.api/RedstoneMechanics)](https://poggit.pmmp.io/p/RedstoneMechanics) [![Total Downloads](https://poggit.pmmp.io/shield.dl.total/RedstoneMechanics)](https://poggit.pmmp.io/p/RedstoneMechanics) [![GitHub License](https://img.shields.io/github/license/nicholass003/RedstoneMechanics)](LICENSE) [![Discord](https://img.shields.io/discord/1230982180742631457?logo=discord&logoColor=white&color=5865F2)](https://discord.gg/EEJK2vxtCp) 
 
