@@ -22,11 +22,31 @@
 
 declare(strict_types=1);
 
-namespace nicholass003\redstonemechanics\block;
+namespace nicholass003\redstonemechanics\block\utils;
 
+use nicholass003\redstonemechanics\RedstoneMechanics;
 use pocketmine\block\Block;
+use pocketmine\block\RedstoneWire;
+use pocketmine\math\Facing;
 
-interface IBlockRedstoneHelper{
+final class BlockRedstoneUtils{
 
-	public static function update(Block $block) : void;
+	public static function updateNearBlocks(Block $block) : void{
+		$powered = false;
+		$world = $block->getPosition()->getWorld();
+		foreach(Facing::ALL as $face){
+			$rBlock = $block->getSide($face);
+			if($rBlock instanceof RedstoneWire){
+				$signal = $rBlock->getOutputSignalStrength();
+				if($signal > 0){
+					$powered = true;
+				}
+				//TODO: check RedstoneWire signal connection
+			}
+			if(RedstoneMechanics::isPoweredByRedstone($rBlock)){
+				$rBlock->setPowered($powered);
+				$world->setBlock($rBlock->getPosition(), $rBlock);
+			}
+		}
+	}
 }

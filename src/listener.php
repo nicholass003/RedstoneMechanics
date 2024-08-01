@@ -25,21 +25,43 @@ declare(strict_types=1);
 namespace nicholass003\redstonemechanics;
 
 use nicholass003\redstonemechanics\block\power\BlockRedstonePowerHelper;
-use nicholass003\redstonemechanics\event\BlockRedstonePowerEvent;
+use nicholass003\redstonemechanics\block\transmission\BlockRedstoneTransmissionHelper;
+use nicholass003\redstonemechanics\block\utils\BlockRedstoneUtils;
 use pocketmine\block\Lever;
+use pocketmine\block\RedstoneWire;
+use pocketmine\event\block\BlockBreakEvent;
+use pocketmine\event\block\BlockPlaceEvent;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerInteractEvent;
+use pocketmine\math\Facing;
 
 class EventListener implements Listener{
+
+	public function onBlockBreak(BlockBreakEvent $event) : void{
+		$block = $event->getBlock();
+		BlockRedstoneUtils::updateNearBlocks($block);
+	}
+
+	public function onBlockPlace(BlockPlaceEvent $event) : void{
+		foreach($event->getTransaction()->getBlocks() as [$x, $y, $z, $block]){
+			foreach(Facing::ALL as $face){
+				$rBlock = $block->getSide($face);
+				if($block instanceof RedstoneWire && $rBlock instanceof RedstoneWire){
+					$block->setOutputSignalStrength($rBlock->getOutputSignalStrength());
+					$block->getPosition()->getWorld()->setBlock($block->getPosition(), $block);
+					BlockRedstoneTransmissionHelper::update($block);
+					//TODO: check RedstoneWire signal connection
+				}
+			}
+			BlockRedstoneUtils::updateNearBlocks($block);
+		}
+	}
 
 	public function onPlayerInteract(PlayerInteractEvent $event) : void{
 		if($event->getAction() === PlayerInteractEvent::RIGHT_CLICK_BLOCK){
 			$block = $event->getBlock();
 			if($block instanceof Lever){
-				foreach(BlockRedstonePowerHelper::update($block) as $rBlock){
-					$ev = new BlockRedstonePowerEvent($rBlock, $rBlock->isPowered(), !$rBlock->isPowered());
-					$ev->call();
-				}
+				BlockRedstonePowerHelper::update($block);
 			}
 		}
 	}

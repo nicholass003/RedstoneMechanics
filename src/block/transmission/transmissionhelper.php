@@ -22,60 +22,58 @@
 
 declare(strict_types=1);
 
-namespace nicholass003\redstonemechanics\block\power;
+namespace nicholass003\redstonemechanics\block\transmission;
 
 use nicholass003\redstonemechanics\block\IBlockRedstoneHelper;
-use nicholass003\redstonemechanics\block\transmission\BlockRedstoneTransmissionHelper;
 use nicholass003\redstonemechanics\event\BlockRedstonePowerEvent;
 use nicholass003\redstonemechanics\RedstoneMechanics;
 use pocketmine\block\Block;
-use pocketmine\block\Lever;
 use pocketmine\block\RedstoneWire;
 use pocketmine\math\Facing;
+use function max;
 
-class BlockRedstonePowerHelper implements IBlockRedstoneHelper{
+class BlockRedstoneTransmissionHelper implements IBlockRedstoneHelper{
 
 	public static function update(Block $block) : void{
-		self::power($block);
+		if($block instanceof RedstoneWire){
+			$signal = max($block->getOutputSignalStrength(), 0);
+			self::transmite($block, $signal);
+		}
 	}
 
-	public static function power(Block $block) : void{
-		$activate = false;
-		$ignoreFace = null;
-		$power = 0;
-		if($block instanceof Lever){
-			$activate = !$block->isActivated();
-			$ignoreFace = $block->getFacing()->getFacing();
-			if($activate === true){
-				$power = 15;
-			}
+	public static function transmite(Block $block, int $power, array &$visitedBlocks = []) : void {
+		if($power < 0 || $power > 15){
+			return;
 		}
+
+		$positionKey = $block->getPosition()->__toString();
+		if(isset($visitedBlocks[$positionKey])){
+			return;
+		}
+
+		$visitedBlocks[$positionKey] = true;
+
+		$newPower = max($power - 1, 0);
+
 		foreach(Facing::ALL as $face){
-			if($face === $ignoreFace){
-				continue;
-			}
 			$rBlock = $block->getSide($face);
 			$world = $rBlock->getPosition()->getWorld();
-			if($rBlock instanceof RedstoneWire){
-				$rBlock->setOutputSignalStrength($power);
-				if($activate === false){
-					$rBlock->setOutputSignalStrength(0);
-				}
-				$world->setBlock($rBlock->getPosition(), $rBlock);
-				BlockRedstoneTransmissionHelper::update($rBlock);
-			}else{
-				self::activate($rBlock, $activate);
-			}
-		}
-	}
 
-	private static function activate(Block $block, bool $activate) : void{
-		$world = $block->getPosition()->getWorld();
-		if(RedstoneMechanics::isPoweredByRedstone($block)){
-			$ev = new BlockRedstonePowerEvent($block, $activate, !$activate);
-			$ev->call();
-			$block->setPowered($ev->getPowered());
-			$world->setBlock($block->getPosition(), $block);
+			if($rBlock instanceof RedstoneWire){
+				if ($rBlock->getOutputSignalStrength() !== $newPower){
+					$rBlock->setOutputSignalStrength($newPower);
+					$world->setBlock($rBlock->getPosition(), $rBlock);
+					self::transmite($rBlock, $newPower, $visitedBlocks);
+				}
+			}elseif(RedstoneMechanics::isPoweredByRedstone($rBlock)){
+				$actived = $newPower > 0;
+				$ev = new BlockRedstonePowerEvent($rBlock, $actived, !$actived);
+				$ev->call();
+				if($rBlock->isPowered() !== $ev->getPowered()){
+					$rBlock->setPowered($ev->getPowered());
+					$world->setBlock($rBlock->getPosition(), $rBlock);
+				}
+			}
 		}
 	}
 }
