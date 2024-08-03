@@ -31,21 +31,16 @@ class BlockRedstonePowerEvent extends BlockEvent{
 
 	public function __construct(
 		Block $block,
-		private bool $newPower,
-		private bool $oldPower
+		private bool $powered
 	){
 		parent::__construct($block);
 	}
 
 	public function getPowered() : bool{
-		return $this->newPower;
+		return $this->powered;
 	}
 
 	public function setPowered(bool $value) : void{
-		$this->newPower = $value;
-	}
-
-	public function getOldPowered() : bool{
-		return $this->oldPower;
+		$this->powered = $value;
 	}
 }

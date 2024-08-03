@@ -72,7 +72,7 @@ class BlockRedstonePowerHelper implements IBlockRedstoneHelper{
 	private static function activate(Block $block, bool $activate) : void{
 		$world = $block->getPosition()->getWorld();
 		if(RedstoneMechanics::isPoweredByRedstone($block)){
-			$ev = new BlockRedstonePowerEvent($block, $activate, !$activate);
+			$ev = new BlockRedstonePowerEvent($block, $activate);
 			$ev->call();
 			$block->setPowered($ev->getPowered());
 			$world->setBlock($block->getPosition(), $block);

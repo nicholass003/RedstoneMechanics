@@ -67,7 +67,7 @@ class BlockRedstoneTransmissionHelper implements IBlockRedstoneHelper{
 				}
 			}elseif(RedstoneMechanics::isPoweredByRedstone($rBlock)){
 				$actived = $newPower > 0;
-				$ev = new BlockRedstonePowerEvent($rBlock, $actived, !$actived);
+				$ev = new BlockRedstonePowerEvent($rBlock, $actived);
 				$ev->call();
 				if($rBlock->isPowered() !== $ev->getPowered()){
 					$rBlock->setPowered($ev->getPowered());
