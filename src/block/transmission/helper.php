@@ -25,8 +25,8 @@ declare(strict_types=1);
 namespace nicholass003\redstonemechanics\block\transmission;
 
 use nicholass003\redstonemechanics\block\IBlockRedstoneHelper;
-use nicholass003\redstonemechanics\event\BlockRedstonePowerEvent;
-use nicholass003\redstonemechanics\RedstoneMechanics;
+use nicholass003\redstonemechanics\block\power\BlockRedstonePowerHelper;
+use nicholass003\redstonemechanics\block\utils\BlockRedstoneUtils;
 use pocketmine\block\Block;
 use pocketmine\block\RedstoneWire;
 use pocketmine\math\Facing;
@@ -42,9 +42,12 @@ class BlockRedstoneTransmissionHelper implements IBlockRedstoneHelper{
 	}
 
 	public static function transmite(Block $block, int $power, array &$visitedBlocks = []) : void {
-		if($power < 0 || $power > 15){
+		if($power <= 0){
 			return;
 		}
+
+		$pos = $block->getPosition();
+		$world = $pos->getWorld();
 
 		$positionKey = $block->getPosition()->__toString();
 		if(isset($visitedBlocks[$positionKey])){
@@ -53,26 +56,18 @@ class BlockRedstoneTransmissionHelper implements IBlockRedstoneHelper{
 
 		$visitedBlocks[$positionKey] = true;
 
-		$newPower = max($power - 1, 0);
+		if($block instanceof RedstoneWire){
+			$block->setOutputSignalStrength($power);
+			$world->setBlock($pos, $block);
+		}
 
+		$_power = max($power - 1, 0);
 		foreach(Facing::ALL as $face){
-			$rBlock = $block->getSide($face);
-			$world = $rBlock->getPosition()->getWorld();
-
-			if($rBlock instanceof RedstoneWire){
-				if ($rBlock->getOutputSignalStrength() !== $newPower){
-					$rBlock->setOutputSignalStrength($newPower);
-					$world->setBlock($rBlock->getPosition(), $rBlock);
-					self::transmite($rBlock, $newPower, $visitedBlocks);
-				}
-			}elseif(RedstoneMechanics::isPoweredByRedstone($rBlock)){
-				$actived = $newPower > 0;
-				$ev = new BlockRedstonePowerEvent($rBlock, $actived);
-				$ev->call();
-				if($rBlock->isPowered() !== $ev->getPowered()){
-					$rBlock->setPowered($ev->getPowered());
-					$world->setBlock($rBlock->getPosition(), $rBlock);
-				}
+			$_block = $block->getSide($face);
+			if($_block instanceof RedstoneWire){
+				static::transmite($_block, $_power, $visitedBlocks);
+			}elseif(BlockRedstoneUtils::isPoweredByRedstone($_block)){
+				BlockRedstonePowerHelper::activate($_block, $_power > 0);
 			}
 		}
 	}

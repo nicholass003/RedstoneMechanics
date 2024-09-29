@@ -24,19 +24,11 @@ declare(strict_types=1);
 
 namespace nicholass003\redstonemechanics;
 
-use pocketmine\block\Block;
 use pocketmine\plugin\PluginBase;
-use ReflectionClass;
-use function in_array;
 
 final class RedstoneMechanics extends PluginBase{
 
 	protected function onEnable() : void{
 		$this->getServer()->getPluginManager()->registerEvents(new EventListener(), $this);
-	}
-
-	public static function isPoweredByRedstone(Block $block) : bool{
-		$reflectionClass = new ReflectionClass($block);
-		return in_array("pocketmine\block\utils\PoweredByRedstoneTrait", $reflectionClass->getTraitNames(), true);
 	}
 }

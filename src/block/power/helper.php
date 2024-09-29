@@ -26,8 +26,8 @@ namespace nicholass003\redstonemechanics\block\power;
 
 use nicholass003\redstonemechanics\block\IBlockRedstoneHelper;
 use nicholass003\redstonemechanics\block\transmission\BlockRedstoneTransmissionHelper;
+use nicholass003\redstonemechanics\block\utils\BlockRedstoneUtils;
 use nicholass003\redstonemechanics\event\BlockRedstonePowerEvent;
-use nicholass003\redstonemechanics\RedstoneMechanics;
 use pocketmine\block\Block;
 use pocketmine\block\Lever;
 use pocketmine\block\RedstoneWire;
@@ -69,13 +69,17 @@ class BlockRedstonePowerHelper implements IBlockRedstoneHelper{
 		}
 	}
 
-	private static function activate(Block $block, bool $activate) : void{
-		$world = $block->getPosition()->getWorld();
-		if(RedstoneMechanics::isPoweredByRedstone($block)){
+	public static function activate(Block $block, bool $activate) : void{
+		$pos = $block->getPosition();
+		$world = $pos->getWorld();
+		if(BlockRedstoneUtils::isPoweredByRedstone($block)){
+			/** @var Block&\pocketmine\block\utils\PoweredByRedstoneTrait $block */
 			$ev = new BlockRedstonePowerEvent($block, $activate);
 			$ev->call();
-			$block->setPowered($ev->getPowered());
-			$world->setBlock($block->getPosition(), $block);
+			if($activate !== $ev->getPowered()){
+				$block->setPowered($ev->getPowered());
+				$world->setBlock($pos, $block);
+			}
 		}
 	}
 }

@@ -26,7 +26,6 @@ namespace nicholass003\redstonemechanics;
 
 use nicholass003\redstonemechanics\block\power\BlockRedstonePowerHelper;
 use nicholass003\redstonemechanics\block\transmission\BlockRedstoneTransmissionHelper;
-use nicholass003\redstonemechanics\block\utils\BlockRedstoneUtils;
 use pocketmine\block\Lever;
 use pocketmine\block\RedstoneWire;
 use pocketmine\event\block\BlockBreakEvent;
@@ -39,7 +38,6 @@ class EventListener implements Listener{
 
 	public function onBlockBreak(BlockBreakEvent $event) : void{
 		$block = $event->getBlock();
-		BlockRedstoneUtils::updateNearBlocks($block);
 	}
 
 	public function onBlockPlace(BlockPlaceEvent $event) : void{
@@ -53,7 +51,6 @@ class EventListener implements Listener{
 					//TODO: check RedstoneWire signal connection
 				}
 			}
-			BlockRedstoneUtils::updateNearBlocks($block);
 		}
 	}
 

@@ -24,29 +24,14 @@ declare(strict_types=1);
 
 namespace nicholass003\redstonemechanics\block\utils;
 
-use nicholass003\redstonemechanics\RedstoneMechanics;
 use pocketmine\block\Block;
-use pocketmine\block\RedstoneWire;
-use pocketmine\math\Facing;
+use ReflectionClass;
+use function in_array;
 
 final class BlockRedstoneUtils{
 
-	public static function updateNearBlocks(Block $block) : void{
-		$powered = false;
-		$world = $block->getPosition()->getWorld();
-		foreach(Facing::ALL as $face){
-			$rBlock = $block->getSide($face);
-			if($rBlock instanceof RedstoneWire){
-				$signal = $rBlock->getOutputSignalStrength();
-				if($signal > 0){
-					$powered = true;
-				}
-				//TODO: check RedstoneWire signal connection
-			}
-			if(RedstoneMechanics::isPoweredByRedstone($rBlock)){
-				$rBlock->setPowered($powered);
-				$world->setBlock($rBlock->getPosition(), $rBlock);
-			}
-		}
+	public static function isPoweredByRedstone(Block $block) : bool{
+		$reflectionClass = new ReflectionClass($block);
+		return in_array("pocketmine\block\utils\PoweredByRedstoneTrait", $reflectionClass->getTraitNames(), true);
 	}
 }
