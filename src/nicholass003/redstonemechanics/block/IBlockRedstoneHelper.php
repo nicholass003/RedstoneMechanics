@@ -25,20 +25,8 @@ declare(strict_types=1);
 namespace nicholass003\redstonemechanics\block;
 
 use pocketmine\block\Block;
-use pocketmine\utils\CloningRegistryTrait;
 
-final class ExtraVanillaBlocks{
-	use CloningRegistryTrait;
+interface IBlockRedstoneHelper{
 
-	private function __construct(){
-		//NOOP
-	}
-
-	protected static function register(string $name, Block $block) : void{
-		self::_registryRegister($name, $block);
-	}
-
-	protected static function setup() : void{
-
-	}
+	public static function update(Block $block) : void;
 }

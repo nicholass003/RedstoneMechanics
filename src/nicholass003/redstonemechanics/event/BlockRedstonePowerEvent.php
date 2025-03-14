@@ -22,13 +22,25 @@
 
 declare(strict_types=1);
 
-namespace nicholass003\redstonemechanics;
+namespace nicholass003\redstonemechanics\event;
 
-use pocketmine\plugin\PluginBase;
+use pocketmine\block\Block;
+use pocketmine\event\block\BlockEvent;
 
-final class RedstoneMechanics extends PluginBase{
+class BlockRedstonePowerEvent extends BlockEvent{
 
-	protected function onEnable() : void{
-		$this->getServer()->getPluginManager()->registerEvents(new EventListener($this), $this);
+	public function __construct(
+		Block $block,
+		private bool $powered
+	){
+		parent::__construct($block);
+	}
+
+	public function getPowered() : bool{
+		return $this->powered;
+	}
+
+	public function setPowered(bool $value) : void{
+		$this->powered = $value;
 	}
 }
