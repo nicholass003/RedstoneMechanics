@@ -25,6 +25,10 @@ declare(strict_types=1);
 namespace nicholass003\redstonemechanics\block\utils;
 
 use pocketmine\block\Block;
+use pocketmine\block\Redstone;
+use pocketmine\block\RedstoneRepeater;
+use pocketmine\block\RedstoneTorch;
+use pocketmine\block\RedstoneWire;
 use ReflectionClass;
 use function in_array;
 
@@ -33,5 +37,21 @@ final class BlockRedstoneUtils{
 	public static function isPoweredByRedstone(Block $block) : bool{
 		$reflectionClass = new ReflectionClass($block);
 		return in_array("pocketmine\block\utils\PoweredByRedstoneTrait", $reflectionClass->getTraitNames(), true);
+	}
+
+	public static function isPowerComponent(Block $block) : bool{
+		if($block instanceof Redstone || $block instanceof RedstoneTorch){
+			//TODO: support more blocks ?
+			return true;
+		}
+		return false;
+	}
+
+	public static function isTransmissionComponent(Block $block) : bool{
+		if($block instanceof RedstoneWire || $block instanceof RedstoneRepeater){
+			//TODO: support more blocks ?
+			return true;
+		}
+		return false;
 	}
 }
