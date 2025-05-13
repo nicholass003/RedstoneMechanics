@@ -26,11 +26,15 @@ namespace nicholass003\redstonemechanics;
 
 use nicholass003\redstonemechanics\block\power\BlockRedstonePowerHelper;
 use nicholass003\redstonemechanics\block\transmission\BlockRedstoneTransmissionHelper;
+use nicholass003\redstonemechanics\block\utils\BlockRedstoneUtils;
+use nicholass003\redstonemechanics\component\power\PowerComponent;
+use nicholass003\redstonemechanics\component\RedstoneComponent;
+use nicholass003\redstonemechanics\component\transmission\TransmissionComponent;
 use pocketmine\block\Block;
-use pocketmine\block\Lever;
 use pocketmine\block\RedstoneWire;
 use pocketmine\event\block\BlockBreakEvent;
 use pocketmine\event\block\BlockPlaceEvent;
+use pocketmine\event\block\PressurePlateUpdateEvent;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerInteractEvent;
 use pocketmine\math\Facing;
@@ -47,80 +51,68 @@ class EventListener implements Listener{
 	public function onBlockBreak(BlockBreakEvent $event) : void{
 		$block = $event->getBlock();
 
-		if($block instanceof RedstoneWire){
-			$connectedRedstone = [];
-			foreach(Facing::ALL as $face){
-				$_block = $block->getSide($face);
-				if($_block instanceof RedstoneWire){
-					$connectedRedstone[] = $_block;
-				}
-			}
-
-			$this->plugin->getScheduler()->scheduleDelayedTask(new ClosureTask(
-				function() use($connectedRedstone, $block) : void{
-					$highPowers = [];
-					$power = $block->getOutputSignalStrength();
-					foreach($connectedRedstone as $redstone){
-						if($redstone->getOutputSignalStrength() < $power){
-							continue;
-						}
-						$highPowers[] = $redstone;
-					}
-
-					$visitedBlocks = [];
-					foreach($highPowers as $_redstone){
-						$_pos = $_redstone->getPosition();
-						$visitedBlocks[World::blockHash($_pos->x, $_pos->y, $_pos->z)] = true;
-					}
-					$block->setOutputSignalStrength(0);
-					BlockRedstoneTransmissionHelper::transmite($block, 0, $visitedBlocks);
-				}
-			), 1);
+		$component = null;
+		if(BlockRedstoneUtils::isPowerComponent($block)){
+			$component = new PowerComponent($block);
+		}elseif(BlockRedstoneUtils::isTransmissionComponent($block)){
+			$component = new TransmissionComponent($block);
+		}
+		if($component !== null){
+			$component->handleComponents(RedstoneComponent::ACTION_BREAK);
 		}
 	}
 
 	public function onBlockPlace(BlockPlaceEvent $event) : void{
 		foreach($event->getTransaction()->getBlocks() as [$x, $y, $z, $block]){
 			/** @var Block $block */
+			$component = null;
 			$connectedRedstone = [];
+			if(BlockRedstoneUtils::isPowerComponent($block)){
+				$component = new PowerComponent($block);
+			}elseif(BlockRedstoneUtils::isTransmissionComponent($block)){
+				$component = new TransmissionComponent($block);
+			}
 			foreach(Facing::ALL as $face){
 				$rBlock = $block->getSide($face);
-				if($block instanceof RedstoneWire){
-					if($rBlock instanceof RedstoneWire){
-						$pos = $rBlock->getPosition();
-						$hash = World::blockHash($pos->x, $pos->y, $pos->z);
-						if(isset($connectedRedstone[$hash])){
-							continue;
-						}
-						$connectedRedstone[$hash] = $rBlock;
+				if($rBlock instanceof RedstoneWire){
+					$pos = $rBlock->getPosition();
+					$hash = World::blockHash($pos->x, $pos->y, $pos->z);
+					if(isset($connectedRedstone[$hash])){
+						continue;
 					}
+					$connectedRedstone[$hash] = $rBlock;
 				}
 			}
 
 			$this->plugin->getScheduler()->scheduleDelayedTask(new ClosureTask(
-				function() use($connectedRedstone, $block) : void{
-					if(!$block instanceof RedstoneWire){
+				function() use($block, $component, $connectedRedstone) : void{
+					if($component === null){
 						return;
 					}
 
-					$highPowers = [];
-					$power = 0;
-					foreach($connectedRedstone as $redstone){
-						if($redstone->getOutputSignalStrength() < $power || $redstone->getOutputSignalStrength() === 0){
-							continue;
+					if($component instanceof TransmissionComponent){
+						$highPowers = [];
+						$power = 0;
+						foreach($connectedRedstone as $redstone){
+							if($redstone->getOutputSignalStrength() < $power || $redstone->getOutputSignalStrength() === 0){
+								continue;
+							}
+							$power = max($power, $redstone->getOutputSignalStrength());
+							$highPowers[] = $redstone;
 						}
-						$power = max($power, $redstone->getOutputSignalStrength());
-						$highPowers[] = $redstone;
-					}
 
-					$visitedBlocks = [];
-					foreach($highPowers as $_redstone){
-						$_pos = $_redstone->getPosition();
-						$visitedBlocks[World::blockHash($_pos->x, $_pos->y, $_pos->z)] = $_redstone->getOutputSignalStrength();
-					}
+						$visitedBlocks = [];
+						foreach($highPowers as $_redstone){
+							$_pos = $_redstone->getPosition();
+							$visitedBlocks[World::blockHash($_pos->x, $_pos->y, $_pos->z)] = $_redstone->getOutputSignalStrength();
+						}
 
-					$exactPower = max(0, $power - 1);
-					BlockRedstoneTransmissionHelper::transmite($block, $exactPower, $visitedBlocks);
+						$exactPower = max(0, $power - 1);
+						BlockRedstoneTransmissionHelper::transmite($block, $exactPower, $visitedBlocks);
+						return;
+					}elseif($component instanceof PowerComponent){
+						BlockRedstonePowerHelper::update($block);
+					}
 				}
 			), 1);
 		}
@@ -129,10 +121,12 @@ class EventListener implements Listener{
 	public function onPlayerInteract(PlayerInteractEvent $event) : void{
 		if($event->getAction() === PlayerInteractEvent::RIGHT_CLICK_BLOCK){
 			$block = $event->getBlock();
-			if($block instanceof Lever){
-				BlockRedstonePowerHelper::update($block);
-			}
-			//TODO: support more blocks
+			BlockRedstonePowerHelper::update($block);
 		}
+	}
+
+	public function onPressurePlateUpdate(PressurePlateUpdateEvent $event) : void{
+		$plate = $event->getBlock();
+		BlockRedstonePowerHelper::update($plate);
 	}
 }

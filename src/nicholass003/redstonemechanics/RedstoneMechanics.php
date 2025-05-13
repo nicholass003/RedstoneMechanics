@@ -25,8 +25,14 @@ declare(strict_types=1);
 namespace nicholass003\redstonemechanics;
 
 use pocketmine\plugin\PluginBase;
+use pocketmine\utils\SingletonTrait;
 
 final class RedstoneMechanics extends PluginBase{
+	use SingletonTrait;
+
+	protected function onLoad() : void{
+		self::setInstance($this);
+	}
 
 	protected function onEnable() : void{
 		$this->getServer()->getPluginManager()->registerEvents(new EventListener($this), $this);

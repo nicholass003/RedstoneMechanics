@@ -24,6 +24,16 @@ declare(strict_types=1);
 
 namespace nicholass003\redstonemechanics\component;
 
+use pocketmine\block\Block;
+
 interface RedstoneComponent{
 
+    public const ACTION_BREAK = 0;
+    public const ACTION_PLACE = 1;
+
+    public function getBlock() : Block;
+
+    public function scheduleUpdate(int $delayTick = 1) : void;
+
+    public function handleComponents(int $action) : void;
 }

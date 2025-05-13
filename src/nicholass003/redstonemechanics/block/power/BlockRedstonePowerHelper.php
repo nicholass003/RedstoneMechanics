@@ -27,10 +27,17 @@ namespace nicholass003\redstonemechanics\block\power;
 use nicholass003\redstonemechanics\block\IBlockRedstoneHelper;
 use nicholass003\redstonemechanics\block\transmission\BlockRedstoneTransmissionHelper;
 use nicholass003\redstonemechanics\block\utils\BlockRedstoneUtils;
+use nicholass003\redstonemechanics\component\power\PowerComponent;
 use nicholass003\redstonemechanics\event\BlockRedstonePowerEvent;
 use pocketmine\block\Block;
+use pocketmine\block\Button;
 use pocketmine\block\Lever;
+use pocketmine\block\Redstone;
+use pocketmine\block\RedstoneTorch;
 use pocketmine\block\RedstoneWire;
+use pocketmine\block\SimplePressurePlate;
+use pocketmine\block\WeightedPressurePlate;
+use pocketmine\block\WoodenButton;
 use pocketmine\math\Facing;
 use pocketmine\world\World;
 
@@ -42,6 +49,7 @@ class BlockRedstonePowerHelper implements IBlockRedstoneHelper{
 
 	public static function power(Block $block) : void{
 		$activate = false;
+		$component = null;
 		$ignoreFace = null;
 		$power = 0;
 		if($block instanceof Lever){
@@ -50,6 +58,27 @@ class BlockRedstonePowerHelper implements IBlockRedstoneHelper{
 			if($activate === true){
 				$power = 15;
 			}
+		}elseif($block instanceof Redstone){
+			$power = 15;
+			$activate = true;
+		}elseif($block instanceof Button){
+			$power = 15;
+			$activate = $block->isPressed();
+			$redstoneTicks = 10; //StoneButton
+			if($block instanceof WoodenButton){
+				$redstoneTicks = 15;
+			}
+			$component = new PowerComponent($block);
+			$component->scheduleUpdate($redstoneTicks);
+		}elseif($block instanceof RedstoneTorch){
+			$activate = $block->isLit();
+			if($activate === true){
+				$power = 15;
+			}
+		}elseif($block instanceof SimplePressurePlate || $block instanceof WeightedPressurePlate){
+			/** @var Block&\pocketmine\block\utils\AnalogRedstoneSignalEmitterTrait $block */
+			$power = $block->getOutputSignalStrength();
+			$activate = $power > 0;
 		}
 		foreach(Facing::ALL as $face){
 			if($face === $ignoreFace){
